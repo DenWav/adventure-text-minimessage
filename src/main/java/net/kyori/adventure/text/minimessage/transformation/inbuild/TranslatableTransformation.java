@@ -28,10 +28,12 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.minimessage.Tokens;
+import net.kyori.adventure.text.minimessage.parser.Element;
 import net.kyori.adventure.text.minimessage.parser.ParsingException;
 import net.kyori.adventure.text.minimessage.transformation.Transformation;
 import net.kyori.adventure.text.minimessage.transformation.TransformationParser;
@@ -63,21 +65,21 @@ public class TranslatableTransformation extends Transformation {
   private final List<Component> inners = new ArrayList<>();
 
   @Override
-  public void load(final String name, final List<String> args) {
+  public void load(final String name, final List<Element.TagPart> args) {
     super.load(name, args);
 
     if(args.isEmpty()) {
       throw new ParsingException("Doesn't know how to turn " + args + " into a translatable component", -1);
     }
 
-    this.key = args.get(0);
+    this.key = args.get(0).getValue();
     if(args.size() > 1) {
-      String string = String.join(":", args.subList(1, args.size()));
+      String string = args.subList(1, args.size()).stream().map(Element.TagPart::getValue).collect(Collectors.joining(":"));
       if(string.startsWith("'") || string.startsWith("\"")) {
         string = string.substring(1).substring(0, string.length() - 2);
       }
       for(final String in : DUM_SPLIT_PATTERN.split(string)) {
-        this.inners.add(context.parse(in));
+        this.inners.add(this.context.parse(in));
       }
     }
   }
